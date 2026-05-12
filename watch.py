@@ -180,6 +180,36 @@ def format_alert(dtr: DTRState, prev_balance: float | None, threshold: float) ->
     )
 
 
+def format_regi_drop(dtr: DTRState, prev_regi: float) -> str:
+    return (
+        f"📉 *Feasibility Freed Up — {dtr.transformer_name}*\n\n"
+        f"Someone's sanction lapsed or was withdrawn.\n"
+        f"Feasibility issued: *{prev_regi} kW → {dtr.feasibility_issued_kw} kW*\n"
+        f"Balance improved: *{dtr.balance_kw} kW*\n\n"
+        f"📊 *Details*\n"
+        f"• Capacity: {dtr.capacity_kva} kVA ({dtr.allowed_cap_kw} kW allowed)\n"
+        f"• Grid connected: {dtr.grid_connected_kw} kW\n"
+        f"• Feasibility issued: {dtr.feasibility_issued_kw} kW\n"
+        f"• KSEB as-on: {dtr.as_on}\n\n"
+        f"_(Separate alert will fire if balance crosses your threshold.)_"
+    )
+
+
+def format_regi_rise(dtr: DTRState, prev_regi: float) -> str:
+    return (
+        f"⚠️ *Capacity Being Taken — {dtr.transformer_name}*\n\n"
+        f"New feasibility sanction issued on your transformer.\n"
+        f"Feasibility issued: *{prev_regi} kW → {dtr.feasibility_issued_kw} kW*\n"
+        f"Balance remaining: *{dtr.balance_kw} kW*\n\n"
+        f"📊 *Details*\n"
+        f"• Capacity: {dtr.capacity_kva} kVA ({dtr.allowed_cap_kw} kW allowed)\n"
+        f"• Grid connected: {dtr.grid_connected_kw} kW\n"
+        f"• Feasibility issued: {dtr.feasibility_issued_kw} kW\n"
+        f"• KSEB as-on: {dtr.as_on}\n\n"
+        f"👉 Consider requesting DTR augmentation at your KSEB section office."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -216,6 +246,7 @@ def main() -> int:
         threshold = threshold_by_dtr.get(dtr_id, global_threshold)
         prev = prev_state.get(dtr_id) or {}
         prev_balance = prev.get("balance_kw")
+        prev_regi = prev.get("feasibility_issued_kw")
         prev_was_above = bool(prev.get("was_above_threshold", False))
         is_above = dtr.balance_kw >= threshold
 
@@ -227,6 +258,7 @@ def main() -> int:
         print(
             f"  {dtr.transformer_name:<25} "
             f"balance={dtr.balance_kw:>6.2f} kW  "
+            f"regi={dtr.feasibility_issued_kw} kW  "
             f"threshold={threshold} kW  "
             f"(prev={prev_b_str:>10}, above={is_above}, prev_above={prev_was_above})"
         )
@@ -235,6 +267,15 @@ def main() -> int:
             msg = format_alert(dtr, prev_balance, threshold)
             send_telegram(msg)
             alerts_sent += 1
+
+        # regi change alerts — only when we have a prior value to compare
+        if prev_regi is not None and dtr.feasibility_issued_kw != prev_regi:
+            if dtr.feasibility_issued_kw < prev_regi:
+                send_telegram(format_regi_drop(dtr, prev_regi))
+                alerts_sent += 1
+            else:
+                send_telegram(format_regi_rise(dtr, prev_regi))
+                alerts_sent += 1
 
         new_state[dtr_id] = {
             "transformer_name": dtr.transformer_name,
