@@ -1,0 +1,16 @@
+{
+  "_comment_threshold": "Alert fires when balance_kw >= alert_threshold_kw and previous value was below it. Tune freely.",
+  "_comment_override": "Each watched DTR may set its own alert_threshold_kw to override the global one. Leave null to use global.",
+
+  "alert_threshold_kw": 3.0,
+
+  "watch": [
+    {
+      "dtr_id": "556771",
+      "section_id": 5567,
+      "name_hint": "SAHALA POLYMER",
+      "notes": "Aluva Town section. Home transformer.",
+      "alert_threshold_kw": null
+    }
+  ]
+}
