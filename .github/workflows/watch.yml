@@ -32,6 +32,10 @@ jobs:
           path: state.json
           key: kseb-state-v1
 
+      - name: Log previous state
+        if: steps.state-cache-restore.outputs.cache-hit == 'true'
+        run: cat state.json
+
       - name: Run watch
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
