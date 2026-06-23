@@ -6,10 +6,10 @@
 
   "watch": [
     {
-      "dtr_id": "556771",
+      "dtr_id": "567XXX",
       "section_id": 5567,
-      "name_hint": "SAHALA POLYMER",
-      "notes": "Aluva Town section. Home transformer.",
+      "name_hint": "CHOONDY",
+      "notes": "Replace dtr_id and section_id with your own. Use find_dtr_id.py to look them up.",
       "alert_threshold_kw": null
     }
   ]

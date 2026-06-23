@@ -96,7 +96,7 @@ Push to GitHub, then go to **Actions → kseb-solar-watch → Run workflow** (ma
 
 Watch the logs. On first run with `balance_kw ≥ threshold`, you'll get a Telegram alert.
 
-After that, the daily cron takes over at 09:00 IST.
+After that, the cron runs twice daily at 09:00 and 18:00 IST.
 
 ## Running locally (optional)
 
