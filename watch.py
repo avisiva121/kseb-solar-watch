@@ -45,6 +45,7 @@ HEADERS = {
 
 WATCHLIST_FILE = Path("watchlist.json")
 STATE_FILE = Path("state.json")
+NTFY_TOPIC = "kseb-solar-dan-aluva"
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +139,29 @@ def save_state(state: dict) -> None:
 # ---------------------------------------------------------------------------
 # Alerting
 # ---------------------------------------------------------------------------
+
+def send_ntfy(message: str) -> None:
+    title = message.split("\n")[0].replace("*", "").strip()
+    r = httpx.post(
+        f"https://ntfy.sh/{NTFY_TOPIC}",
+        content=message.encode(),
+        headers={
+            "Title": title,
+            "Content-Type": "text/markdown",
+            "Priority": "high",
+        },
+        timeout=15.0,
+    )
+    if r.status_code not in (200, 201):
+        print(f"  ⚠ ntfy send failed: {r.status_code} {r.text}", file=sys.stderr)
+    else:
+        print("  ✓ ntfy alert sent")
+
+
+def send_alert(message: str) -> None:
+    send_telegram(message)
+    send_ntfy(message)
+
 
 def send_telegram(message: str) -> None:
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -265,16 +289,16 @@ def main() -> int:
 
         if should_alert:
             msg = format_alert(dtr, prev_balance, threshold)
-            send_telegram(msg)
+            send_alert(msg)
             alerts_sent += 1
 
         # regi change alerts — only when we have a prior value to compare
         if prev_regi is not None and dtr.feasibility_issued_kw != prev_regi:
             if dtr.feasibility_issued_kw < prev_regi:
-                send_telegram(format_regi_drop(dtr, prev_regi))
+                send_alert(format_regi_drop(dtr, prev_regi))
                 alerts_sent += 1
             else:
-                send_telegram(format_regi_rise(dtr, prev_regi))
+                send_alert(format_regi_rise(dtr, prev_regi))
                 alerts_sent += 1
 
         new_state[dtr_id] = {

@@ -2,8 +2,10 @@ name: kseb-solar-watch
 
 on:
   schedule:
-    # Daily at 09:00 IST = 03:30 UTC
+    # 09:00 IST = 03:30 UTC
     - cron: "30 3 * * *"
+    # 18:00 IST = 12:30 UTC
+    - cron: "30 12 * * *"
   workflow_dispatch:  # manual trigger from GitHub UI for testing
 
 jobs:
