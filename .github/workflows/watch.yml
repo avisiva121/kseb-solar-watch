@@ -2,18 +2,13 @@ name: kseb-solar-watch
 
 on:
   schedule:
-    # 09:00 IST = 03:30 UTC
-    - cron: "30 3 * * *"
-    # 18:00 IST = 12:30 UTC
-    - cron: "30 12 * * *"
-  workflow_dispatch:  # manual trigger from GitHub UI for testing
+    # 07:45 IST = 02:15 UTC
+    - cron: "15 2 * * *"
+  workflow_dispatch:
 
 jobs:
   watch:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,37 +21,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Restore the last-seen state (so we can detect changes)
-      - name: Restore state cache
-        id: state-cache-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: state.json
-          key: kseb-state-v1
-
-      - name: Log previous state
-        if: steps.state-cache-restore.outputs.cache-hit == 'true'
-        run: cat state.json
+      - name: Find DTR ID
+        run: python find_dtr_id.py 6658 "POLICE COLONY"
 
       - name: Run watch
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python watch.py
-
-      # Save updated state — we delete the previous cache entry first
-      # because actions/cache won't overwrite an existing key.
-      - name: Delete previous state cache
-        if: always()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh cache delete kseb-state-v1 --repo "$GITHUB_REPOSITORY" || true
-
-      - name: Save state cache
-        if: always() && hashFiles('state.json') != ''
-        uses: actions/cache/save@v4
-        with:
-          path: state.json
-          key: kseb-state-v1
